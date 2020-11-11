@@ -10,6 +10,7 @@
 #include <ATen/ATen.h>
 
 #include <c10d/Types.hpp>
+#include <sys/types.h>
 
 // *************************************************************************
 // PROCESS GROUP collective communication API IS BEING CHANGED BETWEEN
