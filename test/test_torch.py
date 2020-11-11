@@ -15261,7 +15261,7 @@ class TestTorchDeviceType(TestCase):
                 lambda x, y: x.expm1_(),
                 lambda x, y: x.floor(),
                 lambda x, y: x.floor_(),
-                # lambda x, y: x.fmod(2), # https://github.com/pytorch/pytorch/issues/24565
+                lambda x, y: x.fmod(2),
                 lambda x, y: x.frac(),
                 lambda x, y: x.hypot(y),
                 lambda x, y: x.hypot_(y),
@@ -17485,7 +17485,6 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A
         z = torch.tensor([30 / v.item() for v in x], device=device)
         self.assertEqual(y, z, exact_dtype=False)
 
-    @onlyCPU
     @dtypes(*torch.testing.get_all_dtypes(include_bfloat16=False, include_bool=False, include_complex=False))
     def test_fmod(self, device, dtype):
         m1 = torch.Tensor(10, 10).uniform_(-10., 10.).to(dtype=dtype, device=device)
@@ -17499,10 +17498,14 @@ scipy_lobpcg  | {:10.2e}  | {:10.2e}  | {:6} | N/A
 
         zero = torch.zeros_like(m1)
         if dtype in torch.testing.get_all_int_dtypes():
-            with self.assertRaisesRegex(RuntimeError, "ZeroDivisionError"):
-                m1.fmod(0)
-            with self.assertRaisesRegex(RuntimeError, "ZeroDivisionError"):
-                m1.fmod(zero)
+            if device == 'cpu':
+                with self.assertRaisesRegex(RuntimeError, "ZeroDivisionError"):
+                    m1.fmod(0)
+                with self.assertRaisesRegex(RuntimeError, "ZeroDivisionError"):
+                    m1.fmod(zero)
+            else:
+                self.assertTrue(torch.all(m1.fmod(0) == 4294967295))
+                self.assertTrue(torch.all(m1.fmod(zero) == 4294967295))
         else:
             self.assertTrue(torch.all(m1.fmod(0).isnan()))
             self.assertTrue(torch.all(m1.fmod(zero).isnan()))
